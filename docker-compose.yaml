@@ -1,0 +1,34 @@
+version: "3"
+services:
+
+  mymongo:
+    image: mongo:latest
+    container_name: mymongo
+    ports:
+      - 27019:27017
+    networks:
+      - db_stack_network
+    command: --replSet rs0 --bind_ip_all
+    volumes:
+      - "./data/mongodb:/data/db"
+
+
+  connect:
+    build: ./debezium-elastic
+    restart: always
+    ports:
+      - 8083:8083
+    links:
+      - mymongo
+    networks:
+      - db_stack_network
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:29092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
+
+networks:
+  db_stack_network:
+    external: true
